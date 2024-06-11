@@ -1,11 +1,12 @@
 # SRA-Toolkit of NCBI was downloaded
-It's a collection of libraries and tools to access a sequencing files:
+It's a collection of libraries and tools to access a sequencing files. Now we want to analyse transcriptomic data due to the genomic data doesn't retrieved us useful information:
 
 wget --output-document sratoolkit.tar.gz https://ftptrace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-ubuntu64.tar.gz
 tar -vxzf sratoolkit.tar.gz
 export PATH=$PATH:$PWD/sratoolkit.3.0.0-ubuntu64/bin
 fastq-dump --split-files “accession number” 
 
+# We can use this option or we can use the next command to access the paired reads:
 fasterq-dump “accession number” -e  
 
 # Then, we use Trimmomatic to filtrer and cut low-quality reads:
@@ -13,7 +14,7 @@ fasterq-dump “accession number” -e
 java -jar trimmomatic-0.39.jar PE input_forward.fq.gz input_reverse.fq.gz 
 output_forward_paired.fq.gz output_forward_unpaired.fq.gz 
 output_reverse_paired.fq.gz output_reverse_unpaired.fq.gz 
-ILLUMINACLIP:TruSeq3-PE.fa:2:30:10:2:True LEADING:3 TRAILING:3 MINLEN:36
+ILLUMINACLIP:TruSeq3-PE.fa:2:30:10:2:True LEADING:3 TRAILING:3 MINLEN:36 # These last three parameters should be modified. At least, is recommended. 
 
 # In order to use external libraries, like Pfam, we downloaded the necessary files to use Hmmer so we can install it with conda. 
 But, first we use Transdecoder to translate the nucleotide sequences to aminoacids.  
@@ -28,18 +29,22 @@ conda install -c bioconda pfam_scan
 conda install -c "bioconda/label/cf201901" pfam_scan
 
 hmmpress Pfam-A.hmm
-hmmscan --cpu 8 --domtblout pfam.domtblout /path/to/Pfam-A.hmm transdecoder_dir/longest_orfs.pep
+hmmscan --cpu 8 --domtblout pfam.domtblout /path/to/Pfam-A.hmm transdecoder_dir/longest_orfs.pep # With --cpu option we can select how many cores we wan to use. 
 
 # Now we are redy to build our phylogeny with RAxML software (https://github.com/stamatak/standard-RAxML):
 
 gunzip standardRAxML8.0.0.tar.gz
 tar xf standardRAxML8.0.0.tar
-cd standardRAxML8.0.0/
-make f Makefile.AVX.gcc # generates an executable called raxmlHPCAVX
-rm *.o
-make f Makefile.AVX.PTHREADS.gcc # generates an executable called raxmlHPCPTHREADSAVX
-raxmlHPC -s pSeq_aln -n Allseq_Tree -m PROCATVT -p 123 -T 80 -N 1000
 
+cd standardRAxML8.0.0/ # We move to the right directory 
+
+make f Makefile.AVX.gcc # We use this in order to get the sequential and not the vectorized program that generates an executable called raxmlHPCAVX 
+rm *.o
+make f Makefile.AVX.PTHREADS.gcc # Generates an executable called raxmlHPCPTHREADSAVX
+
+# Now we can use the software to build our phylogeny
+
+raxmlHPC -s File -n TreeName -m PROCATVT -p 123 -T 80 -N 1000
 cat RAxML_result.TreeName.RUN > Bootstrap
 raxmlHPC -f b -m PROTCATVT -t RAxML_bestTree.TreeName -z Bootstrap -n BesTree
 

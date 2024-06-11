@@ -1,0 +1,27 @@
+# The cacti genomes were uploaded on the laboratory computer to search WOX5 sequence on other cactaceae species: Carnegiea gigantea, Stenocereus thurberi, Pereskia humboldtii, Lophocereus schottii, Pachycereus pringlei and Hylocereus (now Selenicereus) undatus.
+The Standalone software was installed on linux and the genomes were uploaded making a database for each one. Then, the search (tBLASTn) was made:
+
+tar zxvpf ncbi-blast-2.10.1+-x64-linux.tar.gz mkdir $HOME/blastdb makeblastdb -in InputFile -out DB -parse_seqids -dbtype nucl tblastn -db ~/PacPri_scaff.fa -query Secuencias -outfmt 6 -out Results6.out -evalue 1e-10
+
+# We wanted to know the unique identifiers and then, analyse the quality of the search. To do this, we use R enviroment.
+Unique identifiers
+
+library(dplyr) dataframe = read.delim("InputFile", header = FALSE, sep = "\t", dec = ".") unique (dataframe$V2)
+
+#Quality control
+library(ggplot2) library(ggridges) library(ggpubr)
+
+CactiName=read.csv("InputFile") head(CactiName)
+
+evalue <- ggplot(CactiName, aes(x=ColumnA, y=evalue, colour=ColumnA, fill=ColumnA)) + geom_boxplot() + xlab("")+ theme(legend.position ="none")
+
+Variable1 <- evalue
+
+bitscore <-ggplot(CarGig, aes(y =ColumnA, x =bitscore, fill =ColumnA)) + geom_density_ridges() + ylab("")+ theme(legend.position ="none") + xlab("Bitscore")
+
+Variable2 <- bitscore
+
+#Ploting
+FigureName <- ggarrange(Variable1, Variable2, ncol=2, labels =c("A", "B"))
+
+FigureName ggsave("FigureName.png", width=10, dpi=300)
